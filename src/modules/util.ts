@@ -95,5 +95,35 @@ export default {
 		});
 
 		return directories;
+	},
+	addedFullPathToLoadFunction(mainFile: string) {
+		const fileContents = fs.readFileSync(mainFile, 'utf8');
+		const lines = fileContents.split('\n');
+		const modifiedLines = [];
+		const commentText = '-- Loaded module path: ';
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			const loadAssignmentMatch = line.match(/^\s*[\w\s]+\s*=\s*load\(['"](.+?)['"]\)/);
+			if (loadAssignmentMatch) {
+				const relativePath = loadAssignmentMatch[1];
+				const absolutePath = path.resolve(path.dirname(mainFile), relativePath);
+
+				const resourcePathMatch = absolutePath.match(/.*[\\\/](resources[\\\/].+)/);
+				const truncatedPath = resourcePathMatch ? resourcePathMatch[1] : absolutePath;
+
+				const previousLine = modifiedLines[modifiedLines.length - 1];
+				const commentRegex = new RegExp(`^${commentText} ${truncatedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+				if (!commentRegex.test(previousLine)) {
+					modifiedLines.push(`${commentText} ${truncatedPath}`);
+				}
+			}
+			modifiedLines.push(line);
+		}
+
+		const modifiedFinalBuild = modifiedLines.join('\n');
+		fs.writeFileSync(mainFile, modifiedFinalBuild, 'utf8');
+
+		return modifiedFinalBuild;
 	}
 };

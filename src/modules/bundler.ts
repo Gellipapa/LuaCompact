@@ -163,7 +163,7 @@ export function buildProject() {
 
 	let finalBuild = `${luaFunctions}\n\n`;
 	finalBuild += importBuild + preludeBuild + moduleBuild;
-	finalBuild += `${fs.readFileSync(config.main, "utf8")}`;
+	finalBuild += util.addedFullPathToLoadFunction(config.main);
 	fs.writeFileSync(buildFileDir, finalBuild);
 
 	const timeTaken: number = (Date.now() - startTime) / 1000;
